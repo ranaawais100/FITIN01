@@ -1,7 +1,7 @@
 import { Facebook, Instagram } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
+import { ScrollToTop } from "./ui/ScrollToTop";
 
 const Footer = () => {
   const footerLinks = {
@@ -130,6 +130,10 @@ const Footer = () => {
               ))}
             </ul>
           </div>
+        </div>
+
+        <div className="flex justify-center mb-8">
+          <ScrollToTop />
         </div>
 
         {/* Copyright */}

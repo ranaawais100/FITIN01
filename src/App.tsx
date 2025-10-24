@@ -16,6 +16,7 @@ import AddProduct from "./pages/AddProduct";
 import AdminLogin from "./pages/AdminLogin";
 import CreateAdmin from "./pages/CreateAdmin";
 import { CartProvider } from "@/hooks/use-cart";
+import ScrollManager from "@/components/ScrollManager";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
       <Sonner />
       <CartProvider>
         <BrowserRouter>
+          <ScrollManager />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/products" element={<ShopAll />} />
