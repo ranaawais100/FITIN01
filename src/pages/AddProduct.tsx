@@ -5,7 +5,12 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, Upload, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { addProduct, uploadProductImage } from "@/lib/firebaseService";
+import { 
+  addProduct, 
+  getAllCategories, 
+  addCategory, 
+  Category
+} from "@/lib/firebaseService";
 
 export default function AddProduct() {
   const navigate = useNavigate();
@@ -13,25 +18,50 @@ export default function AddProduct() {
   const [formData, setFormData] = useState({
     name: "",
     price: "",
-    category: "Hoodies",
+    category: "",
     sizes: [] as string[],
     stock: "",
     description: "",
-    imageUrl: "",
+    featured: "none" as "best-selling" | "trending-now" | "none",
   });
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [images, setImages] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [newCategory, setNewCategory] = useState("");
 
-  // Check authentication on mount
   useEffect(() => {
     const isAuthenticated = localStorage.getItem("adminAuthenticated");
     if (!isAuthenticated) {
       toast.error("Please login to access this page");
       navigate("/admin-login");
     }
+    fetchCategories();
   }, [navigate]);
 
-  const categories = ["Hoodies", "Shirts", "Track Pants", "Trouser", "Other"];
+  const fetchCategories = async () => {
+    try {
+      const fetchedCategories = await getAllCategories();
+      setCategories(fetchedCategories);
+    } catch (error) {
+      toast.error("Failed to fetch categories.");
+    }
+  };
+
+  const handleAddCategory = async () => {
+    if (newCategory.trim() === "") {
+      toast.error("Category name cannot be empty.");
+      return;
+    }
+    try {
+      const newCategoryId = await addCategory(newCategory.trim());
+      setCategories([...categories, { id: newCategoryId, name: newCategory.trim() }]);
+      setFormData({ ...formData, category: newCategory.trim() });
+      setNewCategory("");
+      toast.success(`Category '${newCategory.trim()}' added successfully.`);
+    } catch (error) {
+      toast.error("Failed to add category.");
+    }
+  };
+
   const availableSizes = ["S", "M", "L", "XL", "XXL"];
 
   const handleSizeToggle = (size: string) => {
@@ -44,80 +74,62 @@ export default function AddProduct() {
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        toast.error('Please upload an image file');
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      if (images.length + files.length > 4) {
+        toast.error("You can upload a maximum of 4 images.");
         return;
       }
-
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('Image size should be less than 5MB');
-        return;
-      }
-
-      setImageFile(file);
-      
-      // Create preview URL
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-      
-      toast.success('Image uploaded successfully');
+      Array.from(files).forEach(file => {
+        if (!file.type.startsWith('image/')) {
+          toast.error('Please upload only image files.');
+          return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error('Image size should be less than 5MB.');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImages(prevImages => [...prevImages, reader.result as string]);
+        };
+        reader.readAsDataURL(file);
+      });
     }
   };
 
-  const handleRemoveImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
+  const handleRemoveImage = (index: number) => {
+    setImages(images.filter((_, i) => i !== index));
     toast.info('Image removed');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
-    if (!formData.name || !formData.price || !formData.stock) {
-      toast.error("Please fill in all required fields");
+    if (!formData.name || !formData.price || !formData.stock || !formData.category) {
+      toast.error("Please fill in all required fields.");
       return;
     }
-
     if (formData.sizes.length === 0) {
-      toast.error("Please select at least one size");
+      toast.error("Please select at least one size.");
       return;
     }
-
     if (Number(formData.price) <= 0) {
-      toast.error("Price must be greater than 0");
+      toast.error("Price must be greater than 0.");
       return;
     }
-
     if (Number(formData.stock) < 0) {
-      toast.error("Stock cannot be negative");
+      toast.error("Stock cannot be negative.");
       return;
     }
-
-    if (!imageFile && !imagePreview) {
-      toast.error("Please upload a product image");
+    if (images.length === 0) {
+      toast.error("Please upload at least one product image.");
       return;
     }
 
     setLoading(true);
 
     try {
-      // Upload image to Firebase Storage
-      let imageUrl = imagePreview || "";
-      
-      if (imageFile) {
-        toast.info("Uploading image...");
-        imageUrl = await uploadProductImage(imageFile, formData.name);
-      }
-
-      // Add product to Firestore
       const productData = {
         name: formData.name,
         price: Number(formData.price),
@@ -125,7 +137,8 @@ export default function AddProduct() {
         sizes: formData.sizes,
         stock: Number(formData.stock),
         description: formData.description,
-        image: imageUrl,
+        featured: formData.featured,
+        images: images,
       };
 
       await addProduct(productData);
@@ -135,6 +148,7 @@ export default function AddProduct() {
       setTimeout(() => {
         navigate("/admin");
       }, 1000);
+
     } catch (error) {
       console.error("Error adding product:", error);
       toast.error("Failed to add product. Please try again.");
@@ -183,15 +197,41 @@ export default function AddProduct() {
               <label className="block text-sm font-medium mb-2">
                 Category <span className="text-red-500">*</span>
               </label>
+              <div className="flex gap-2">
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
+                  required>
+                  <option value="" disabled>Select a category</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.name}>{cat.name}</option>
+                  ))}
+                </select>
+                <input 
+                    type="text" 
+                    value={newCategory} 
+                    onChange={e => setNewCategory(e.target.value)} 
+                    placeholder="Or add new category"
+                    className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
+                />
+                <Button type="button" onClick={handleAddCategory}>Add</Button>
+              </div>
+            </div>
+
+            {/* Featured Section */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Featured Section
+              </label>
               <select
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                value={formData.featured}
+                onChange={(e) => setFormData({ ...formData, featured: e.target.value as "best-selling" | "trending-now" | "none" })}
                 className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
-                required
               >
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
+                <option value="none">None</option>
+                <option value="best-selling">Best Selling</option>
+                <option value="trending-now">Trending Now</option>
               </select>
             </div>
 
@@ -255,10 +295,19 @@ export default function AddProduct() {
             {/* Product Image Upload */}
             <div>
               <label className="block text-sm font-medium mb-2">
-                Product Image <span className="text-red-500">*</span>
+                Product Images (up to 4) <span className="text-red-500">*</span>
               </label>
-              
-              {!imagePreview ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  {images.map((image, index) => (
+                      <div key={index} className="relative">
+                          <img src={image} alt={`preview ${index}`} className="w-full h-32 object-cover rounded-lg"/>
+                          <Button type="button" variant="destructive" size="sm" onClick={() => handleRemoveImage(index)} className="absolute top-2 right-2">
+                              <X className="h-4 w-4" />
+                          </Button>
+                      </div>
+                  ))}
+              </div>
+              {images.length < 4 && (
                 <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
                   <input
                     type="file"
@@ -266,6 +315,7 @@ export default function AddProduct() {
                     accept="image/*"
                     onChange={handleImageUpload}
                     className="hidden"
+                    multiple
                   />
                   <label
                     htmlFor="image-upload"
@@ -275,33 +325,10 @@ export default function AddProduct() {
                       <Upload className="h-8 w-8 text-muted-foreground" />
                     </div>
                     <div>
-                      <p className="font-medium text-sm mb-1">Click to upload image</p>
+                      <p className="font-medium text-sm mb-1">Click to upload images</p>
                       <p className="text-xs text-muted-foreground">PNG, JPG, WEBP up to 5MB</p>
                     </div>
                   </label>
-                </div>
-              ) : (
-                <div className="relative border-2 border-border rounded-lg p-4">
-                  <img
-                    src={imagePreview}
-                    alt="Product preview"
-                    className="w-full h-64 object-cover rounded-lg"
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleRemoveImage}
-                    className="absolute top-6 right-6"
-                  >
-                    <X className="h-4 w-4 mr-1" />
-                    Remove
-                  </Button>
-                  {imageFile && (
-                    <p className="text-xs text-muted-foreground mt-2">
-                      File: {imageFile.name} ({(imageFile.size / 1024).toFixed(2)} KB)
-                    </p>
-                  )}
                 </div>
               )}
             </div>
@@ -319,29 +346,6 @@ export default function AddProduct() {
                 className="w-full p-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:outline-none resize-none"
               />
             </div>
-
-            {/* Preview */}
-            {formData.name && (
-              <div className="bg-muted/20 p-4 rounded-lg border border-border">
-                <h3 className="font-semibold mb-2 text-sm">Preview</h3>
-                <div className="flex gap-4">
-                  {imagePreview && (
-                    <img
-                      src={imagePreview}
-                      alt="Preview"
-                      className="w-24 h-24 object-cover rounded-lg border border-border"
-                    />
-                  )}
-                  <div className="space-y-1 text-sm flex-1">
-                    <p><strong>Name:</strong> {formData.name}</p>
-                    <p><strong>Category:</strong> {formData.category}</p>
-                    <p><strong>Price:</strong> PKR {formData.price || "0.00"}</p>
-                    <p><strong>Stock:</strong> {formData.stock || "0"} units</p>
-                    <p><strong>Sizes:</strong> {formData.sizes.join(", ") || "None selected"}</p>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Action Buttons */}
             <div className="flex gap-4 pt-4">
@@ -362,11 +366,7 @@ export default function AddProduct() {
                 type="button" 
                 variant="outline" 
                 onClick={() => {
-                  if (formData.name || formData.price || formData.stock) {
-                    if (window.confirm("Are you sure you want to cancel? All changes will be lost.")) {
-                      navigate("/admin");
-                    }
-                  } else {
+                  if (window.confirm("Are you sure you want to cancel? All changes will be lost.")) {
                     navigate("/admin");
                   }
                 }}

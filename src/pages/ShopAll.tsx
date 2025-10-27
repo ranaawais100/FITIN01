@@ -6,28 +6,6 @@ import { Button } from "@/components/ui/button";
 import { SlidersHorizontal, X, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getAllProducts, type Product } from "@/lib/firebaseService";
-import product1 from "@/assets/Gemini_Generated_Image_k2tpopk2tpopk2tp copy.png";
-import product2 from "@/assets/Gemini_Generated_Image_arg08xarg08xarg0.png";
-import product3 from "@/assets/Gemini_Generated_Image_jgsml6jgsml6jgsm.png";
-import product4 from "@/assets/Gemini_Generated_Image_k2tpopk2tpopk2tp.png";
-
-// ShopAll page component
-
-// Sample/fallback products when Firebase is empty
-const sampleProducts: Product[] = [
-  { id: "sample-1", name: "Sweat Shirt", price: 4499.99, category: "Hoodies", sizes: ["S", "M", "L"], stock: 50, image: product1, description: "Stay cozy and stylish with our premium sweatshirt, crafted from soft, breathable fabric for all-day comfort. Designed with a modern fit and durable stitching, it's perfect for casual wear, workouts, or layering during chilly days. Available in multiple colors, this sweatshirt combines comfort, versatility, and timeless style — making it a must-have for every wardrobe." },
-  { id: "sample-2", name: "China Tracksuit", price: 4200, category: "Track Pants", sizes: ["M", "L"], stock: 100, image: product2, description: "Elevate your everyday look with our premium tracksuit, designed for both comfort and performance. Made from soft, breathable fabric with a perfect balance of stretch, it offers a relaxed yet athletic fit. Whether you're hitting the gym, running errands, or lounging in style, this tracksuit keeps you comfortable and confident all day long. Available in multiple colors with sleek detailing for a modern touch." },
-  { id: "sample-3", name: "Sweat Shirt", price: 3199.99, category: "Hoodies", sizes: ["M", "L", "XL"], stock: 75, image: product4, description: "Stay cozy and stylish with our premium sweatshirt, crafted from soft, breathable fabric for all-day comfort. Designed with a modern fit and durable stitching, it's perfect for casual wear, workouts, or layering during chilly days. Available in multiple colors, this sweatshirt combines comfort, versatility, and timeless style — making it a must-have for every wardrobe." },
-  { id: "sample-4", name: "Tracksuit", price: 3200, category: "Track Pants", sizes: ["M", "L"], stock: 60, image: product3, description: "Elevate your everyday look with our premium tracksuit, designed for both comfort and performance. Made from soft, breathable fabric with a perfect balance of stretch, it offers a relaxed yet athletic fit. Whether you're hitting the gym, running errands, or lounging in style, this tracksuit keeps you comfortable and confident all day long. Available in multiple colors with sleek detailing for a modern touch." },
-  { id: "sample-5", name: "Sweat Shirt", price: 1899.0, category: "Hoodies", sizes: ["S", "M", "L", "XL"], stock: 80, image: product4, description: "Stay cozy and stylish with our premium sweatshirt, crafted from soft, breathable fabric for all-day comfort. Designed with a modern fit and durable stitching, it's perfect for casual wear, workouts, or layering during chilly days. Available in multiple colors, this sweatshirt combines comfort, versatility, and timeless style — making it a must-have for every wardrobe." },
-  { id: "sample-6", name: "Tracksuit", price: 3200, category: "Track Pants", sizes: ["S", "M", "L"], stock: 90, image: product2, description: "Elevate your everyday look with our premium tracksuit, designed for both comfort and performance. Made from soft, breathable fabric with a perfect balance of stretch, it offers a relaxed yet athletic fit. Whether you're hitting the gym, running errands, or lounging in style, this tracksuit keeps you comfortable and confident all day long. Available in multiple colors with sleek detailing for a modern touch." },
-  { id: "sample-7", name: "Track Suit", price: 3200, category: "Track Pants", sizes: ["M", "L", "XL"], stock: 70, image: product3, description: "Elevate your everyday look with our premium tracksuit, designed for both comfort and performance. Made from soft, breathable fabric with a perfect balance of stretch, it offers a relaxed yet athletic fit. Whether you're hitting the gym, running errands, or lounging in style, this tracksuit keeps you comfortable and confident all day long. Available in multiple colors with sleek detailing for a modern touch." },
-  { id: "sample-8", name: "Sweat Shirt", price: 3299.0, category: "Hoodies", sizes: ["S", "M", "L", "XL"], stock: 40, image: product1, description: "Stay cozy and stylish with our premium sweatshirt, crafted from soft, breathable fabric for all-day comfort. Designed with a modern fit and durable stitching, it's perfect for casual wear, workouts, or layering during chilly days. Available in multiple colors, this sweatshirt combines comfort, versatility, and timeless style — making it a must-have for every wardrobe." },
-  { id: "sample-9", name: "Tracksuit", price: 3200, category: "Track Pants", sizes: ["S", "M"], stock: 120, image: product2, description: "Elevate your everyday look with our premium tracksuit, designed for both comfort and performance. Made from soft, breathable fabric with a perfect balance of stretch, it offers a relaxed yet athletic fit. Whether you're hitting the gym, running errands, or lounging in style, this tracksuit keeps you comfortable and confident all day long. Available in multiple colors with sleek detailing for a modern touch." },
-  { id: "sample-10", name: "Tracksuit", price: 3200, category: "Track Pants", sizes: ["M", "L"], stock: 55, image: product3, description: "Elevate your everyday look with our premium tracksuit, designed for both comfort and performance. Made from soft, breathable fabric with a perfect balance of stretch, it offers a relaxed yet athletic fit. Whether you're hitting the gym, running errands, or lounging in style, this tracksuit keeps you comfortable and confident all day long. Available in multiple colors with sleek detailing for a modern touch." },
-  { id: "sample-11", name: "Sweat Shirt", price: 1599.0, category: "Hoodies", sizes: ["M", "L", "XL"], stock: 65, image: product4, description: "Stay cozy and stylish with our premium sweatshirt, crafted from soft, breathable fabric for all-day comfort. Designed with a modern fit and durable stitching, it's perfect for casual wear, workouts, or layering during chilly days. Available in multiple colors, this sweatshirt combines comfort, versatility, and timeless style — making it a must-have for every wardrobe." },
-  { id: "sample-12", name: "Sweat Shirt", price: 799.0, category: "Hoodies", sizes: ["S", "M", "L"], stock: 100, image: product1, description: "Stay cozy and stylish with our premium sweatshirt, crafted from soft, breathable fabric for all-day comfort. Designed with a modern fit and durable stitching, it's perfect for casual wear, workouts, or layering during chilly days. Available in multiple colors, this sweatshirt combines comfort, versatility, and timeless style — making it a must-have for every wardrobe." },
-];
 
 const sizes = ["Any Size", "S", "M", "L", "XL"];
 const sortOptions = [
@@ -37,8 +15,8 @@ const sortOptions = [
 ];
 
 function ShopAll() {
-  const [allProducts, setAllProducts] = useState<Product[]>(sampleProducts);
-  const [categories, setCategories] = useState<string[]>(["All Categories", "Hoodies", "Shirts", "Track Pants", "Trouser"]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<string[]>(["All Categories"]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>("All Categories");
@@ -51,27 +29,24 @@ function ShopAll() {
   }, []);
 
   const loadProducts = async () => {
+    setLoading(true);
     try {
       const productsData = await getAllProducts();
       
-      // Use Firebase products if available, otherwise use sample products
       if (productsData && productsData.length > 0) {
         setAllProducts(productsData);
         
-        // Extract unique categories from products
         const uniqueCategories = Array.from(
           new Set(productsData.map(p => p.category).filter(Boolean))
         );
         setCategories(["All Categories", ...uniqueCategories]);
       } else {
-        setAllProducts(sampleProducts);
+        setAllProducts([]);
         setCategories(["All Categories", "Hoodies", "Shirts", "Track Pants", "Trouser"]);
       }
     } catch (error) {
       console.error('Error loading products:', error);
-      // On error, use sample products
-      setAllProducts(sampleProducts);
-      setCategories(["All Categories", "Hoodies", "Shirts", "Track Pants", "Trouser"]);
+      setAllProducts([]);
     } finally {
       setLoading(false);
     }
@@ -140,13 +115,11 @@ function ShopAll() {
           </header>
 
           <div className="relative">
-            {/* Mobile Filter Overlay */}
             {isFilterOpen && (
               <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setIsFilterOpen(false)} />
             )}
 
             <div className="flex gap-4 md:gap-6 lg:gap-8">
-              {/* Filter Sidebar */}
               <aside className={`fixed lg:relative inset-y-0 left-0 z-50 w-[85vw] max-w-[320px] lg:w-auto lg:max-w-none lg:flex-shrink-0 transform transition-transform duration-300 lg:transform-none ${
                 isFilterOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
               }`}>
@@ -206,9 +179,8 @@ function ShopAll() {
                   Reset filters
                 </button>
               </div>
-            </aside>
+              </aside>
             
-            {/* Products Grid */}
             <div className="flex-1">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
@@ -226,7 +198,7 @@ function ShopAll() {
                       key={product.id} 
                       name={product.name}
                       price={product.price}
-                      image={product.image}
+                      image={product.images && product.images.length > 0 ? product.images[0] : '/placeholder.svg'}
                       description={product.description}
                     />
                   ))}
@@ -243,4 +215,3 @@ function ShopAll() {
 }
 
 export default ShopAll;
-

@@ -42,27 +42,28 @@ export default function AdminDashboard() {
 
   // Check authentication and admin status on mount
   useEffect(() => {
-    const unsubscribe = onAuthStateChange(async (user) => {
-      if (!user) {
-        toast.error("Please login to access admin dashboard");
-        navigate("/admin-login");
-        return;
-      }
-
-      // Verify user is an admin
-      const isAdmin = await checkAdminStatus(user.uid);
-      if (!isAdmin) {
-        toast.error("Access denied. Admin privileges required.");
-        await signOutUser();
-        navigate("/admin-login");
-        return;
-      }
-
-      // Load data if authenticated and is admin
-      loadData();
-    });
-
-    return () => unsubscribe();
+    const isAuthenticated = localStorage.getItem("adminAuthenticated");
+    if (isAuthenticated) {
+      loadData(); 
+    } else {
+      const unsubscribe = onAuthStateChange(async (user) => {
+        if (user) {
+          const isAdmin = await checkAdminStatus(user.uid);
+          if (isAdmin) {
+            localStorage.setItem("adminAuthenticated", "true");
+            loadData();
+          } else {
+            toast.error("Access denied. Admin privileges required.");
+            await signOutUser();
+            navigate("/admin-login");
+          }
+        } else {
+          toast.error("Please login to access admin dashboard");
+          navigate("/admin-login");
+        }
+      });
+      return () => unsubscribe();
+    }
   }, [navigate]);
 
   const loadData = async () => {
@@ -478,6 +479,9 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="space-y-4">
+                   {editingProduct.image && (
+                    <img src={editingProduct.image} alt={editingProduct.name} className="w-full h-64 object-cover rounded-lg" />
+                  )}
                   <div>
                     <label className="block text-sm font-medium mb-1">Product Name</label>
                     <input

@@ -9,10 +9,14 @@ import {
   orderBy,
   Timestamp,
   getDoc,
-  setDoc
+  setDoc,
+  where
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from './firebase';
+import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { db } from './firebase';
+
+// Initialize Cloud Storage
+const storage = getStorage();
 
 export type Product = {
   id?: string;
@@ -22,7 +26,8 @@ export type Product = {
   sizes: string[];
   stock: number;
   description?: string;
-  image: string;
+  images: string[];
+  featured?: 'best-selling' | 'trending-now' | 'none';
   createdAt?: Date | Timestamp;
 };
 
@@ -37,10 +42,34 @@ export type Order = {
   createdAt?: Date | Timestamp;
 };
 
-// Products Collection Reference
+export type Category = {
+    id?: string;
+    name: string;
+};
+
+// Collection References
 const productsCollection = collection(db, 'products');
 const ordersCollection = collection(db, 'orders');
 const usersCollection = collection(db, 'users');
+const categoriesCollection = collection(db, 'categories');
+
+// ============ IMAGE UPLOAD SERVICE ============
+
+/**
+ * Uploads a base64 encoded image to Firebase Storage and returns the URL.
+ */
+export async function uploadImage(base64Image: string, productId: string): Promise<string> {
+  try {
+    const storageRef = ref(storage, `products/${productId}/${Date.now()}`);
+    await uploadString(storageRef, base64Image, 'data_url');
+    const downloadURL = await getDownloadURL(storageRef);
+    return downloadURL;
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    throw new Error('Failed to upload image');
+  }
+}
+
 
 // ============ USER/ADMIN SERVICES ============
 
@@ -103,32 +132,70 @@ export async function checkAdminStatus(userId: string): Promise<boolean> {
   }
 }
 
-// ============ PRODUCT SERVICES ============
-
 /**
- * Upload product image to Firebase Storage
+ * Make a user an admin by email
  */
-export async function uploadProductImage(file: File, productName: string): Promise<string> {
+export async function makeUserAdmin(email: string): Promise<void> {
   try {
-    // Create a unique filename
-    const timestamp = Date.now();
-    const filename = `products/${timestamp}-${productName.replace(/\s+/g, '-')}.${file.name.split('.').pop()}`;
-    
-    // Create storage reference
-    const storageRef = ref(storage, filename);
-    
-    // Upload file
-    const snapshot = await uploadBytes(storageRef, file);
-    
-    // Get download URL
-    const downloadURL = await getDownloadURL(snapshot.ref);
-    
-    return downloadURL;
+    const q = query(usersCollection, where("email", "==", email));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      throw new Error(`User with email ${email} not found`);
+    }
+
+    querySnapshot.forEach(async (userDoc) => {
+      const userRef = doc(db, 'users', userDoc.id);
+      await updateDoc(userRef, { role: 'admin' });
+    });
   } catch (error) {
-    console.error('Error uploading image:', error);
-    throw new Error('Failed to upload image');
+    console.error('Error making user admin:', error);
+    throw error;
   }
 }
+
+// ============ CATEGORY SERVICES ============
+
+/**
+ * Get all categories from Firestore
+ */
+export async function getAllCategories(): Promise<Category[]> {
+  try {
+    const q = query(categoriesCollection, orderBy('name'));
+    const querySnapshot = await getDocs(q);
+    const categories: Category[] = [];
+    querySnapshot.forEach((doc) => {
+      categories.push({
+        id: doc.id,
+        ...doc.data()
+      } as Category);
+    });
+    return categories;
+  } catch (error) {
+    console.error('Error getting categories:', error);
+    throw new Error('Failed to fetch categories');
+  }
+}
+
+/**
+ * Add a new category to Firestore
+ */
+export async function addCategory(categoryName: string): Promise<string> {
+    try {
+        const q = query(categoriesCollection, where("name", "==", categoryName));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            return querySnapshot.docs[0].id;
+        }
+        const docRef = await addDoc(categoriesCollection, { name: categoryName });
+        return docRef.id;
+    } catch (error) {
+        console.error('Error adding category:', error);
+        throw new Error('Failed to add category');
+    }
+}
+
+// ============ PRODUCT SERVICES ============
 
 /**
  * Add a new product to Firestore
@@ -143,6 +210,27 @@ export async function addProduct(productData: Omit<Product, 'id'>): Promise<stri
   } catch (error) {
     console.error('Error adding product:', error);
     throw new Error('Failed to add product');
+  }
+}
+
+/**
+ * Get a single product by ID from Firestore
+ */
+export async function getProductById(productId: string): Promise<Product | null> {
+  try {
+    const productRef = doc(db, 'products', productId);
+    const productDoc = await getDoc(productRef);
+    
+    if (productDoc.exists()) {
+      return {
+        id: productDoc.id,
+        ...productDoc.data()
+      } as Product;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting product by ID:', error);
+    throw new Error('Failed to fetch product');
   }
 }
 
@@ -166,6 +254,29 @@ export async function getAllProducts(): Promise<Product[]> {
   } catch (error) {
     console.error('Error getting products:', error);
     throw new Error('Failed to fetch products');
+  }
+}
+
+/**
+ * Get featured products from Firestore
+ */
+export async function getFeaturedProducts(featuredType: 'best-selling' | 'trending-now'): Promise<Product[]> {
+  try {
+    const q = query(productsCollection, where('featured', '==', featuredType), orderBy('createdAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    
+    const products: Product[] = [];
+    querySnapshot.forEach((doc) => {
+      products.push({
+        id: doc.id,
+        ...doc.data()
+      } as Product);
+    });
+    
+    return products;
+  } catch (error) {
+    console.error(`Error getting ${featuredType} products:`, error);
+    throw new Error(`Failed to fetch ${featuredType} products`);
   }
 }
 

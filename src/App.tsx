@@ -15,6 +15,8 @@ import Admin from "./pages/Admin";
 import AddProduct from "./pages/AddProduct";
 import AdminLogin from "./pages/AdminLogin";
 import CreateAdmin from "./pages/CreateAdmin";
+import MakeAdmin from "./pages/MakeAdmin";
+import ProductDetails from "./pages/ProductDetails";
 import { CartProvider } from "@/hooks/use-cart";
 import ScrollManager from "@/components/ScrollManager";
 
@@ -31,6 +33,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/products" element={<ShopAll />} />
+            <Route path="/product/:productId" element={<ProductDetails />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/checkout" element={<Checkout />} />
@@ -38,6 +41,7 @@ const App = () => (
             <Route path="/signup" element={<SignUp />} />
             <Route path="/admin-login" element={<AdminLogin />} />
             <Route path="/create-admin" element={<CreateAdmin />} />
+            <Route path="/make-admin" element={<MakeAdmin />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/add-product" element={<AddProduct />} />
             <Route path="*" element={<NotFound />} />
