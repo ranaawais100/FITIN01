@@ -17,7 +17,7 @@ const ProductCarouselRow = ({ products }: { products: Product[] }) => {
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainer.current) {
       const { clientWidth } = scrollContainer.current;
-      const scrollAmount = direction === 'left' ? -clientWidth : clientWidth;
+      const scrollAmount = direction === 'left' ? -clientWidth * 0.8 : clientWidth * 0.8;
       scrollContainer.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
@@ -69,29 +69,53 @@ const AllProductsSection = () => {
     fetchProducts();
   }, []);
 
-  const productRows = useMemo(() => {
-    if (products.length === 0) return [];
-    const rows: Product[][] = [[], [], []];
-    products.forEach((product, index) => {
-      rows[index % 3].push(product);
-    });
-    return rows.filter(row => row.length > 0);
+  const { tracksuits, oldmoney, trousers, shirts } = useMemo(() => {
+    const lowerCaseIncludes = (field: string | undefined, searchTerm: string) => 
+        field?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const tracksuits = products.filter(p => lowerCaseIncludes(p.name, 'tracksuit'));
+    const oldmoney = products.filter(p => lowerCaseIncludes(p.category, 'old money'));
+    const trousers = products.filter(p => lowerCaseIncludes(p.name, 'trouser') || lowerCaseIncludes(p.category, 'trouser') || lowerCaseIncludes(p.category, 'track pants'));
+    const shirts = products.filter(p => lowerCaseIncludes(p.name, 'shirt'));
+    
+    return { tracksuits, oldmoney, trousers, shirts };
   }, [products]);
 
   return (
     <div className="py-16 bg-muted/10">
       <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold">Shop Our Collection</h2>
             <Link to="/shop-all" className="text-primary font-semibold hover:underline flex items-center gap-2">
                 View All
                 <ChevronRight className="h-4 w-4" />
             </Link>
         </div>
-        <div className="space-y-8">
-          {productRows.map((row, rowIndex) => (
-            <ProductCarouselRow key={rowIndex} products={row} />
-          ))}
+        <div className="space-y-12">
+          {tracksuits.length > 0 && (
+            <section>
+              <h3 className="text-2xl font-bold mb-4">Tracksuits</h3>
+              <ProductCarouselRow products={tracksuits} />
+            </section>
+          )}
+          {oldmoney.length > 0 && (
+            <section>
+              <h3 className="text-2xl font-bold mb-4">Old Money</h3>
+              <ProductCarouselRow products={oldmoney} />
+            </section>
+          )}
+          {trousers.length > 0 && (
+            <section>
+              <h3 className="text-2xl font-bold mb-4">Trousers</h3>
+              <ProductCarouselRow products={trousers} />
+            </section>
+          )}
+          {shirts.length > 0 && (
+            <section>
+              <h3 className="text-2xl font-bold mb-4">Shirts</h3>
+              <ProductCarouselRow products={shirts} />
+            </section>
+          )}
         </div>
       </div>
     </div>
