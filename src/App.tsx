@@ -19,6 +19,7 @@ import MakeAdmin from "./pages/MakeAdmin";
 import ProductDetails from "./pages/ProductDetails";
 import { CartProvider } from "@/hooks/use-cart";
 import ScrollManager from "@/components/ScrollManager";
+import OrderConfirmation from "./pages/OrderConfirmation";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/checkout" element={<Checkout />} />
+            <Route path="/order-confirmation" element={<OrderConfirmation />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/admin-login" element={<AdminLogin />} />
